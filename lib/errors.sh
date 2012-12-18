@@ -1,7 +1,6 @@
 #!/bin/bash
 # Errors and sussess messages
 
-
 # Simple notification
 function notification() {
 	echo $1
@@ -21,6 +20,6 @@ function warning() {
 function error() {
 	echo "ERROR: ${1:-"Unknown Error"}" 1>&2
 	# Halt
-	test $2 -eq 0 && exit $2 || exit 1;	
+	exit 1;	
 }
 
