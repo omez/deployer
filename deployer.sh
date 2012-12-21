@@ -1,6 +1,6 @@
 #!/bin/bash
 
-readonly CONFIG_VERSION="0.1.3-alpha1"
+readonly CONFIG_VERSION="0.1.3-alpha4"
 CONFIG_APP_DIR=$(dirname $(readlink -f $0))		# Application directory
 CONFIG_WORK_DIR=$(pwd)							# Current working directory
 CONFIG_CUSTOM_DIR=".deployer"					# Overriding directory with configuration in pwd
@@ -11,6 +11,10 @@ readonly ERROR_CODE_OK=0
 readonly ERROR_CODE_NORMAL=1
 readonly ERROR_CODE_CORE=2
 readonly ERROR_CODE_EXTERNAL=3
+
+# Include configuration files
+test -f $CONFIG_APP_DIR/config.cfg && . $CONFIG_APP_DIR/config.cfg
+test -d $CONFIG_CUSTOM_DIR/config.cfg && . $CONFIG_CUSTOM_DIR/config.cfg
 
 ## Some functions for information
 # Prints information string
