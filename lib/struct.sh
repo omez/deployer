@@ -96,9 +96,9 @@ function turnon() {
 		error "Unable to recognize target directory from specified '$1'" "turn-on.recovery"
 	fi
 	
-	hook "turn-on.pre"
-	
 	test -d $TARGET || error "Unable to access directory $TARGET" 
+	
+	hook "turn-on.pre"
 		
 	## switch current directory to specified build
 	setlink $CONFIG_STRUCT_CURRENT $TARGET
