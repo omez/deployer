@@ -19,6 +19,10 @@ function warning() {
 # Fatal error, will fail the script
 function error() {
 	echo "ERROR: ${1:-"Unknown Error"}" 1>&2
+	
+	
+	# @todo add hook execution
+	
 	# Halt
 	exit 1;	
 }
