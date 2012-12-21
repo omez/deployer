@@ -1,0 +1,39 @@
+#!/bin/bash
+
+## Unpack archived source
+#
+# Once, having artifacts archive, we should unpack them into working directory
+# 
+# declare, that package is a tarball with name source.tar.gz
+# in $TARGET variable we have path to directory with source (build dir)
+#
+CONFIG_PACKAGE_SOURCE_NAME="source.tar.gz"
+test -r $TARGET/$CONFIG_PACKAGE_SOURCE_NAME || error "Source file does not exist or not readable" "turn-on.recovery"
+
+tmp=$(pwd)
+cd $TARGET
+tar -xvzf $CONFIG_PACKAGE_SOURCE_NAME && unlink $CONFIG_PACKAGE_SOURCE_NAME
+cd $tmp
+unset $tmp
+
+
+## Create temporary directories and syminks
+#
+# Sometimes after build delivery we need to create symlinks and some dirs to make system work,
+# also we may have to setup file modes too
+#
+
+## Example of directory creation
+# mkdir $TARGET/somewhere/tmp \
+# && success "Directory ... created" \
+# || error "Unable to create directory ..." "turn-on.recovery"
+
+## Example of link creation
+# ln -s [somedir] $TARGET/somelink \
+# && success "Link ... created" \
+# || error "Unable to create link ..." "turn-on.recovery"
+
+## Setting chmods for some reason
+# chmod xxx $TARGET/somefile \
+# && success "Chmod changed for ..." \
+# || error "Unable to chmod ..." "turn-on.recovery"
