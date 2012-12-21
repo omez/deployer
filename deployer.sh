@@ -4,8 +4,8 @@ readonly CONFIG_VERSION="0.1.3-dev"
 CONFIG_APP_DIR=$(dirname $(readlink -f $0))		# Application directory
 CONFIG_WORK_DIR=$(pwd)							# Current working directory
 CONFIG_CUSTOM_DIR=".deployer"					# Overriding directory with configuration in pwd
-CONFIG_VERBOSE=0								# Show debug information during execution
-CONFIG_NO_INTERACTION=0							# Sets into no-interaction mode
+CONFIG_VERBOSE=''								# Show debug information during execution
+CONFIG_NO_INTERACTION=''						# Sets into no-interaction mode
 
 readonly ERROR_CODE_OK=0
 readonly ERROR_CODE_NORMAL=1
@@ -39,7 +39,7 @@ unset params
 while true; do
 	case $1 in
 		-v|--verbose)
-			CONFIG_VERBOSE=1;
+			CONFIG_VERBOSE=0;
 			shift
 			;;
 		-y|--no-interaction)
@@ -71,7 +71,6 @@ echo "Web-application deployer (c) 2012 Alexander Sergeychik aka OmeZ"
 test $CONFIG_VERBOSE && echo "> working dir: $CONFIG_WORK_DIR"
 test $CONFIG_VERBOSE && echo "> app dir: $CONFIG_APP_DIR"
 
-
 # Laod required libraries
 echo -n "Loading libraries... ";
 . $CONFIG_APP_DIR/lib/errors.sh && echo -n "." || exit $ERROR_CODE_CORE;
@@ -90,7 +89,7 @@ case $1 in
 		struct_init
 		;;
 	validate)
-		struct_validate
+		struct_check || echo "Structure is not valid"
 		;;
 	turn-on)
 		turnon $2
@@ -103,7 +102,5 @@ case $1 in
 		exit $ERROR_CODE_NORMAL
 		;;
 esac
-
-
 
 ## Done!
