@@ -14,8 +14,6 @@ CONFIG_STRUCT_CURRENT="current"
 CONFIG_STRUCT_MAINTENANCE="maintenance"
 CONFIG_STRUCT_BUILDS="builds"
 
-
-
 ## Creates directory structure and set appropriate access rights
 # @triggers struct_init.pre
 # @triggers struct_init.post
@@ -57,66 +55,79 @@ function struct_check() {
 	hook "struct_check.pre"
 	
 	# Maintenance
-	test ! -d $CONFIG_STRUCT_MAINTENANCE || error "Maintenance mode directory doesn't exist" "struct_check.recovery";
-	test -L $CONFIG_STRUCT_MAINTENANCE || error "Maintenance mode directory should not be a symbolic link" "struct_check.recovery";
+	test -d $CONFIG_STRUCT_MAINTENANCE || error "Maintenance mode directory '$CONFIG_STRUCT_MAINTENANCE' doesn't exist" "struct_check.recovery";
+	test ! -L $CONFIG_STRUCT_MAINTENANCE || error "Maintenance mode directory '$CONFIG_STRUCT_MAINTENANCE' should not be a symbolic link" "struct_check.recovery";
 	
 	
 	# Build directory
-	test ! -d $CONFIG_STRUCT_BUILDS || error "Build directory doesn't exist" "struct_check.recovery";
-	test -L $CONFIG_STRUCT_BUILDS || error "Build directory should not be a symbolic link" "struct_check.recovery";
+	test -d $CONFIG_STRUCT_BUILDS || error "Build directory '$CONFIG_STRUCT_BUILDS' doesn't exist" "struct_check.recovery";
+	test ! -L $CONFIG_STRUCT_BUILDS || error "Build directory '$CONFIG_STRUCT_BUILDS' should not be a symbolic link" "struct_check.recovery";
 	
 	
 	# Current directory
-	test ! -L $CONFIG_STRUCT_CURRENT || error "Build directory should be a symbolic link" "struct_check.recovery";
-	test -w $CONFIG_STRUCT_CURRENT || error "Current directory should be able to be changed with current user" "struct_check.recovery";
+	test -L $CONFIG_STRUCT_CURRENT || error "Current directory '$CONFIG_STRUCT_CURRENT' should be a symbolic link" "struct_check.recovery";
+	# @todo check for writable, maybe by chmod flags
+	#test -w $CONFIG_STRUCT_CURRENT || error "Current directory '$CONFIG_STRUCT_CURRENT' should be able to be changed with current user" "struct_check.recovery";
 	
 	hook "struct_check.post"
+	
+	test $CONFIG_VERBOSE && echo "> testing directory complete"
 }
 
 
 ## Turns structure ON to specific build
+# @triggers turnon.pre
+# @triggers turnon.post
 function turnon() {
 	echo "Switching site ON"
 	struct_check;
 	
 	# Prepare arguments
-	if [ -z $2 ]; then
+	if [ -z $1 ]; then
 		echo "Build name or directory required" 
 		exit $ERROR_CODE_NORMAL;
-	fi 
-	
-	if [ -d $CONFIG_BUILD_DIR/$2 ]; then
-		test $CONFIG_VERBOSE && echo "> using build number $BUILD"
-		$TARGET=$CONFIG_BUILD_DIR/$BUILD
-	else 
-		test $CONFIG_VERBOSE && echo "> using directory $BUILD"
-		$TARGET=$2
+	elif [ -d $CONFIG_STRUCT_BUILDS/$1 ]; then
+		TARGET="$CONFIG_STRUCT_BUILDS/$1"
+		test $CONFIG_VERBOSE && echo "> using build number $1"
+	elif [ -d $1 ]; then
+		TARGET=$1
+		test $CONFIG_VERBOSE && echo "> using directory $1"
+	else
+		error "Unable to recognize target directory from specified '$1'" "turn-on.recovery"
 	fi
 	
 	hook "turn-on.pre"
 	
-	test -d $TARGET || error "Unable to access directory $TARGET" "turn-on.recovery"
+	test -d $TARGET || error "Unable to access directory $TARGET" 
 		
 	## switch current directory to specified build
-	ls -sf $TARGET $CONFIG_STRUCT_CURRENT	
+	setlink $CONFIG_STRUCT_CURRENT $TARGET
 	
 	hook "turn-on.post"
 }
 
 
 ## Turns structure off to maintenance mode
+# @triggers turnoff.pre
+# @triggers turnoff.post
 function turnoff() {
-	echo "Switching site OFF to maintenance"
+	echo "Switching site OFF to maintenance mode"
 	struct_check;
 	
 	hook "turn-on.pre"
 	
-	ls -sf $TARGET $CONFIG_STRUCT_MAINTENANCE
+	setlink $CONFIG_STRUCT_CURRENT $CONFIG_STRUCT_MAINTENANCE
 	
 	hook "turn-on.post"
 }
 
-
-
+## Creates/modifies link
+function setlink() {
+	
+	unlink $1 && ln -sf $2 $1 \
+	|| error "Unable to create link '$1'->'$2'" \
+	&& success "Link '$1'->'$2' successfully created"
+	
+}
 
 

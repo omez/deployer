@@ -20,8 +20,8 @@ function warning() {
 function error() {
 	echo "ERROR: ${1:-"Unknown Error"}" 1>&2
 	
-	
-	# @todo add hook execution
+	# hook execution (fallback) if present
+	test $2 && hook $2
 	
 	# Halt
 	exit 1;	
