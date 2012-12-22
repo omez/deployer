@@ -39,6 +39,10 @@ function struct_init() {
 		warning "Current symbolic link './$CONFIG_STRUCT_CURRENT' exists or not accessible"	
 	fi
 	
+	# adding .custom dir here
+	mkdir $CONFIG_CUSTOM_DIR 
+	mkdir $CONFIG_CUSTOM_DIR/hooks
+	
 	echo "Checking created structure"	
 	struct_check
 	
@@ -124,7 +128,7 @@ function turnoff() {
 ## Creates/modifies link
 function setlink() {
 	
-	unlink $1 && ln -sf $2 $1 \
+	unlink $1 && ln -sfT $2 $1 \
 	|| error "Unable to create link '$1'->'$2'" \
 	&& success "Link '$1'->'$2' successfully created"
 	
