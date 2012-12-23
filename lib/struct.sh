@@ -13,6 +13,7 @@
 CONFIG_STRUCT_CURRENT="current"
 CONFIG_STRUCT_MAINTENANCE="maintenance"
 CONFIG_STRUCT_BUILDS="builds"
+CONFIG_STRUCT_ACTUAL="actual"
 
 ## Creates directory structure and set appropriate access rights
 # @triggers struct_init.pre
@@ -81,15 +82,17 @@ function struct_check() {
 
 ## Turns structure ON to specific build
 # @triggers turnon.pre
-# @triggers turnon.post
+# @triggers turnon.post 
 function turnon() {
 	echo "Switching site ON"
 	struct_check;
 	
 	# Prepare arguments
 	if [ -z $1 ]; then
-		echo "Build name or directory required" 
-		exit $ERROR_CODE_NORMAL;
+		test -L $CONFIG_STRUCT_ACTUAL || error "Build name, directory or actual state required"
+		TARGET=$(readlink $CONFIG_STRUCT_ACTUAL)
+		unlink $CONFIG_STRUCT_ACTUAL
+		
 	elif [ -d $CONFIG_STRUCT_BUILDS/$1 ]; then
 		TARGET="$CONFIG_STRUCT_BUILDS/$1"
 		test $CONFIG_VERBOSE && echo "> using build number $1"
@@ -102,14 +105,18 @@ function turnon() {
 	
 	test -d $TARGET || error "Unable to access directory $TARGET" 
 	
+	if [ `readlink -f $TARGET` == `readlink -f $CONFIG_STRUCT_CURRENT` ]; then
+		echo "Site already points to target '$TARGET'"
+		exit $ERROR_STRUCT_OK;
+	fi
+	
 	hook "turn-on.pre"
-		
+	
 	## switch current directory to specified build
 	setlink $CONFIG_STRUCT_CURRENT $TARGET
 	
 	hook "turn-on.post"
 }
-
 
 ## Turns structure off to maintenance mode
 # @triggers turnoff.pre
@@ -118,17 +125,30 @@ function turnoff() {
 	echo "Switching site OFF to maintenance mode"
 	struct_check;
 	
-	hook "turn-on.pre"
+	if [ `readlink -f $CONFIG_STRUCT_MAINTENANCE` == `readlink -f $CONFIG_STRUCT_CURRENT` ]; then
+		echo "Site already in maintenance mode"
+		exit $ERROR_STRUCT_OK;
+	fi
 	
+	hook "turn-off.pre"
+	
+	# Copy existing pointer to build into actual (no override if exists)
+	cp -nPT $CONFIG_STRUCT_CURRENT $CONFIG_STRUCT_ACTUAL \
+	&& success "$CONFIG_STRUCT_ACTUAL->$(readlink -f $CONFIG_STRUCT_ACTUAL)" \
+	|| error "Unable to create actual symlink" "turn-off.recovery" 
+	
+	# Creating link to maintenance mode
 	setlink $CONFIG_STRUCT_CURRENT $CONFIG_STRUCT_MAINTENANCE
 	
-	hook "turn-on.post"
+	hook "turn-off.post"
 }
 
 ## Creates/modifies link
 function setlink() {
 	
-	unlink $1 && ln -sfT $2 $1 \
+	test -L $1 && unlink $1;
+	
+	ln -sfT $2 $1 \
 	|| error "Unable to create link '$1'->'$2'" \
 	&& success "Link '$1'->'$2' successfully created"
 	
