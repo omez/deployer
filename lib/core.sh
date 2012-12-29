@@ -14,13 +14,14 @@ CONFIG_STRUCT_CURRENT="current"
 CONFIG_STRUCT_MAINTENANCE="maintenance"
 CONFIG_STRUCT_BUILDS="builds"
 CONFIG_STRUCT_ACTUAL="actual"
+CONFIG_BACKUP_DIR="backup"
 
 ## Creates directory structure and set appropriate access rights
-# @triggers struct_init.pre
-# @triggers struct_init.post
-function struct_init() {
+# @triggers init.pre
+# @triggers init.post
+function init() {
 	
-	hook "struct_init.pre"
+	hook "init.pre"
 	
 	if [ ! -d ./$CONFIG_STRUCT_BUILDS ]; then
 		mkdir ./$CONFIG_STRUCT_BUILDS && success "Builds directory created" || error "Error during build directory creation" "struct_init.recovery";
@@ -45,19 +46,19 @@ function struct_init() {
 	mkdir $CONFIG_CUSTOM_DIR/hooks
 	
 	echo "Checking created structure"	
-	struct_check
+	validate
 	
-	hook "struct_init.post"
+	hook "init.post"
 }
 
 
 ## Validates existing structure for errors
-# @triggers struct_check.pre
-# @triggers struct_check.post
-function struct_check() {
+# @triggers validate.pre
+# @triggers validate.post
+function validate() {
 	test $CONFIG_VERBOSE && echo "> testing directory structure"
 	
-	hook "struct_check.pre"
+	hook "validate.pre"
 	
 	# Maintenance
 	test -d $CONFIG_STRUCT_MAINTENANCE || error "Maintenance mode directory '$CONFIG_STRUCT_MAINTENANCE' doesn't exist" "struct_check.recovery";
@@ -81,18 +82,20 @@ function struct_check() {
 
 
 ## Turns structure ON to specific build
-# @triggers turnon.pre
-# @triggers turnon.post 
+# @triggers turn-on.pre
+# @triggers turn-on.post 
 function turnon() {
 	echo "Switching site ON"
-	struct_check;
+	validate;
+	
+	NOCHANGE=0
 	
 	# Prepare arguments
 	if [ -z $1 ]; then
 		test -L $CONFIG_STRUCT_ACTUAL || error "Build name, directory or actual state required"
 		TARGET=$(readlink $CONFIG_STRUCT_ACTUAL)
 		unlink $CONFIG_STRUCT_ACTUAL
-		
+		NOCHANGE=1
 	elif [ -d $CONFIG_STRUCT_BUILDS/$1 ]; then
 		TARGET="$CONFIG_STRUCT_BUILDS/$1"
 		test $CONFIG_VERBOSE && echo "> using build number $1"
@@ -119,11 +122,11 @@ function turnon() {
 }
 
 ## Turns structure off to maintenance mode
-# @triggers turnoff.pre
-# @triggers turnoff.post
+# @triggers turn-off.pre
+# @triggers turn-off.post
 function turnoff() {
 	echo "Switching site OFF to maintenance mode"
-	struct_check;
+	validate;
 	
 	if [ `readlink -f $CONFIG_STRUCT_MAINTENANCE` == `readlink -f $CONFIG_STRUCT_CURRENT` ]; then
 		echo "Site already in maintenance mode"
@@ -143,15 +146,77 @@ function turnoff() {
 	hook "turn-off.post"
 }
 
-## Creates/modifies link
-function setlink() {
+
+
+
+##### Creates fully-working backup version #####
+#
+# @triggers backup.pre
+# @triggers backup.post
+function backup() {
 	
-	test -L $1 && unlink $1;
+	# Exit if backup exists
+	if [ -d $CONFIG_BACKUP_DIR ]; then
+		echo "Backup directory already exists";
+		exit $ERROR_CODE_NORMAL;
+	fi
 	
-	ln -sfT $2 $1 \
-	|| error "Unable to create link '$1'->'$2'" \
-	&& success "Link '$1'->'$2' successfully created"
+	hook "backup.pre"
+	
+	
+	
+	hook "backup.post"
 	
 }
+
+##### Finalizes deployment #####
+#
+# @triggers finalize.pre
+# @triggers finalize.post
+function finalize() {
+	
+	# Process finalization of build. Can be run only from console
+	echo "Are you sure you want to finalize current build?"
+	# @todo add confirmation command here
+	
+	hook "finalize.pre"	
+	
+	
+	
+	hook "finalize.post"
+	
+}
+
+##### Recovers deployment from stash #####
+#
+# @triggers backup.pre
+# @triggers backup.post
+function fallback() {
+	echo "Falling back to backuped version"
+	
+	hook "backup.pre"
+	
+	
+	
+	hook "backup.post"
+	
+	unlink $CONFIG_BACKUP_DIR;
+}
+
+##### Switches current location to specified #####
+#
+# @triggers switch.pre
+# @triggers switch.post
+function switch() {
+	echo "Switching to new version"
+	
+	hook "switch.pre"
+	
+	
+	
+	hook "switch.post"
+	
+}
+
 
 
