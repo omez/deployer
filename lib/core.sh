@@ -6,7 +6,8 @@
 # 
 
 CONFIG_STRUCT_CURRENT="current"
-CONFIG_STRUCT_RELEASES="releases"
+CONFIG_STRUCT_RELEASE="release"
+CONFIG_STRUCT_MAINTENANCE="maintenance"
 CONFIG_STRUCT_SHARED="shared"
 
 
@@ -14,20 +15,18 @@ CONFIG_STRUCT_SHARED="shared"
 # @triggers init.pre
 # @triggers init.post
 function init() {
-	
+	echo "Initializing core structure"
 	hook init pre
 	
-	mkdir -p $CONFIG_STRUCT_RELEASES || error "Unable to create $CONFIG_STRUCT_RELEASES" init recovery
+	mkdir -p $CONFIG_STRUCT_RELEASE || error "Unable to create $CONFIG_STRUCT_RELEASE" init recovery
 	mkdir -p $CONFIG_STRUCT_SHARED || error "Unable to create $CONFIG_STRUCT_SHARED" init recovery
 	mkdir -p $CONFIG_STRUCT_MAINTENANCE || error "Unable to create $CONFIG_STRUCT_MAINTENANCE" init recovery
-	#mkdir -p $CONFIG_STRUCT_BACKUP || error "Unable to create $CONFIG_STRUCT_BACKUP" init recovery
 	ln -nsf $CONFIG_STRUCT_MAINTENANCE $CONFIG_STRUCT_CURRENT || error "Unable to create link $CONFIG_STRUCT_CURRENT" init recovery
 	
 	# adding .custom dir here
 	mkdir $CONFIG_CUSTOM_DIR 
 	mkdir $CONFIG_CUSTOM_DIR/hooks
 	
-	echo "Checking created structure"	
 	validate
 	
 	hook init post
@@ -38,18 +37,20 @@ function init() {
 # @triggers validate.pre
 # @triggers validate.post
 function validate() {
-	test $CONFIG_VERBOSE && echo "> testing directory structure"
+	test $CONFIG_VERBOSE && echo "> validating core structure"
 	
 	hook validate pre
 	
 	# Releases
-	test -d $CONFIG_STRUCT_RELEASES || error "Releases directory '$CONFIG_STRUCT_MAINTENANCE' doesn't exist" validate recovery;
+	test -d $CONFIG_STRUCT_RELEASE || error "Release directory '$CONFIG_STRUCT_RELEASE' doesn't exist" validate recovery;
 	
 	# Shared
 	test -d $CONFIG_STRUCT_SHARED || error "Shared directory '$CONFIG_STRUCT_SHARED' doesn't exist" validate recovery;
 	
 	# Maintenance
 	test -d $CONFIG_STRUCT_MAINTENANCE || error "Maintenance mode directory '$CONFIG_STRUCT_MAINTENANCE' doesn't exist" validate recovery;
+	
+	
 	
 	# Current directory
 	test -L $CONFIG_STRUCT_CURRENT || error "Current directory '$CONFIG_STRUCT_CURRENT' should be a symbolic link" validate recovery;
@@ -58,45 +59,46 @@ function validate() {
 	
 	hook validate post
 	
-	test $CONFIG_VERBOSE && echo "> testing directory complete"
+	test $CONFIG_VERBOSE && echo "> validating core structure complete"
 }
 
 
-##### Switches current location to specified #####
-# 
-# @triggers switch.pre
-# @triggers switch.post
-function switch() {
-	echo "Switching to new version $1" && validate;
+## Turns structure off to maintenance mode
+# @triggers turn-off.pre
+# @triggers turn-off.post
+function turnoff() {
+	echo "Switching site OFF to maintenance mode" && validate;
 	
-	TARGET=$1
-	
-	# Prepare arguments
-	test -z $TARGET && error "No version specified" switch recovery
-	
-	hook switch pre
-	
-	if [ -d $CONFIG_STRUCT_RELEASES/$1 ]; then
-		TARGET="$CONFIG_STRUCT_RELEASES/$1"
-		test $CONFIG_VERBOSE && echo "> using build number $1"
-	elif [ -d $1 ]; then
-		TARGET=$1
-		test $CONFIG_VERBOSE && echo "> using directory $1"
-	else
-		error "Unable to recognize target directory from specified '$1'" switch recovery
-	fi
-	
-	test -d $TARGET || error "Unable to access directory $TARGET" switch recovery
-	
-	if [ `readlink -f $TARGET` == `readlink -f $CONFIG_STRUCT_CURRENT` ]; then
-		echo "Site already points to target '$TARGET'"
+	if [ `readlink -f $CONFIG_STRUCT_MAINTENANCE` == `readlink -f $CONFIG_STRUCT_CURRENT` ]; then
+		echo "Site already points to maintenance '$CONFIG_STRUCT_MAINTENANCE'"
 		exit $ERROR_STRUCT_OK;
-	fi
+	fi	
 	
-	ln -nsf $TARGET $CONFIG_STRUCT_CURRENT
-	test $CONFIG_VERBOSE && echo "> pointed to '$CURRENT'->'$TARGET'"
+	hook turn-off pre
 	
-	hook switch post
-	success "Switching complete"
+	ln -nsf $CONFIG_STRUCT_MAINTENANCE $CONFIG_STRUCT_CURRENT
+	test -L $CONFIG_STRUCT_CURRENT || error "Link '$CONFIG_STRUCT_CURRENT'->'$CONFIG_STRUCT_MAINTENANCE' not created"
+	test $CONFIG_VERBOSE && echo "> '$CONFIG_STRUCT_CURRENT'->'$CONFIG_STRUCT_MAINTENANCE'"
+	
+	hook turn-off post
 }
 
+
+## Turns structure ON to specific build
+# @triggers turn-on.pre
+# @triggers turn-on.post 
+function turnon() {
+	echo "Switching site ON to release"  && validate;
+	
+	if [ `readlink -f $CONFIG_STRUCT_RELEASE` == `readlink -f $CONFIG_STRUCT_CURRENT` ]; then
+		error "Site already points to release '$CONFIG_STRUCT_RELEASE' ($(readlink -f $CONFIG_STRUCT_RELEASE))"
+	fi
+	
+	hook turn-on pre
+	
+	ln -nsf $CONFIG_STRUCT_RELEASE $CONFIG_STRUCT_CURRENT
+	test -L $CONFIG_STRUCT_CURRENT || error "Link '$CONFIG_STRUCT_CURRENT'->'$CONFIG_STRUCT_RELEASE' not created"
+	test $CONFIG_VERBOSE && echo "> '$CONFIG_STRUCT_CURRENT'->'$CONFIG_STRUCT_RELEASE'"
+	
+	hook turn-on post
+}

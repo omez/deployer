@@ -24,12 +24,9 @@ function usage() {
 	echo "  validate                - validates directory structure for errors"
 	echo "  switch [build number]   - switches current build to other"
 	echo "  backup                  - creates backup version of site"
-	
-	
 	echo "  turn-off                - turns site off into maintenance mode"
 	echo "  turn-on                 - turns site on from maintenace/other modes"
-	
-	echo "  restore, fallback       - restores current build form backup"
+	echo "  rescue, fallback        - restores current build form backup"
 	echo "  stabilize               - marks current version as stable and removes backup"
 	echo ""
 	
@@ -54,7 +51,7 @@ while true; do
 			shift
 			;;
 		-y|--no-interaction)
-			CONFIG_NO_INTERACTION=1;
+			CONFIG_NO_INTERACTION=0;
 			shift;
 			;;
 		-V|--version)
@@ -87,6 +84,8 @@ echo -n "Loading libraries... ";
 . $CONFIG_APP_DIR/lib/errors.sh && echo -n "." || exit $ERROR_CODE_CORE;
 . $CONFIG_APP_DIR/lib/system.sh && echo -n "." || exit $ERROR_CODE_CORE;
 . $CONFIG_APP_DIR/lib/core.sh && echo -n "." || exit $ERROR_CODE_CORE;
+. $CONFIG_APP_DIR/lib/backup.sh && echo -n "." || exit $ERROR_CODE_CORE;
+. $CONFIG_APP_DIR/lib/releases.sh && echo -n "." || exit $ERROR_CODE_CORE;
 echo " OK"
 
 # Workflow start
@@ -97,10 +96,14 @@ fi
 
 case $1 in
 	init)
-		init
+		init;
+		init_backup;
+		init_releases;
 		;;
 	validate)
 		valiadte || echo "Structure is not valid"
+		valiadte_backup || echo "Backup structure is not valid"
+		valiadte_releases || echo "Releases structure is not valid"
 		;;
 	turn-on)
 		turnon
@@ -114,8 +117,8 @@ case $1 in
 	backup)
 		backup
 		;;
-	restore|fallback)
-		fallback
+	rescue|fallback)
+		rescue
 		;;
 	stabilize)
 		stabilize
