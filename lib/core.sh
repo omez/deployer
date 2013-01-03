@@ -81,6 +81,17 @@ function validate() {
 }
 
 
+## Test pointer for folder
+## Usage testpointer "where/to/link" "message if wrong"
+function testpointer() {
+	test $CONFIG_VERBOSE && echo "> testing pointer $CONFIG_STRUCT_CURRENT -> $1"
+	if [ `readlink -f $1` == `readlink -f $CONFIG_STRUCT_CURRENT` ]; then
+		echo $2;
+		exit $ERROR_STRUCT_OK;
+	fi
+}
+
+
 ## Turns structure ON to specific build
 # @triggers turn-on.pre
 # @triggers turn-on.post 
@@ -88,7 +99,7 @@ function turnon() {
 	echo "Switching site ON"
 	validate;
 	
-	NOCHANGE=0
+	local NOCHANGE=0
 	
 	# Prepare arguments
 	if [ -z $1 ]; then

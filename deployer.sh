@@ -1,6 +1,6 @@
 #!/bin/bash
 
-readonly CONFIG_VERSION="0.1.3-alpha4"
+readonly CONFIG_VERSION="0.1.4-alpha1"
 CONFIG_APP_DIR=$(dirname $(readlink -f $0))		# Application directory
 CONFIG_WORK_DIR=$(pwd)							# Current working directory
 CONFIG_CUSTOM_DIR=".deployer"					# Overriding directory with configuration in pwd
