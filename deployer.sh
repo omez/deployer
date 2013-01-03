@@ -22,10 +22,13 @@ function usage() {
 	echo "Usage:"
 	echo "  init                    - initializes directory structure"
 	echo "  validate                - validates directory structure for errors"
+	echo "  switch [build number]   - switches current build to other"
+	echo "  backup                  - creates backup version of site"
+	
+	
 	echo "  turn-off                - turns site off into maintenance mode"
 	echo "  turn-on                 - turns site on from maintenace/other modes"
-	echo "  switch [build number]   - switches current build to other (only when maintenance mode on)"
-	echo "  backup                  - creates backup version of site"
+	
 	echo "  restore, fallback       - restores current build form backup"
 	echo "  stabilize               - marks current version as stable and removes backup"
 	echo ""

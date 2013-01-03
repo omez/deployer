@@ -21,7 +21,7 @@ function error() {
 	echo "ERROR: ${1:-"Unknown Error"}" 1>&2
 	
 	# hook execution (fallback) if present
-	test $2 && hook $2
+	test $2 && hook $2 $3
 	
 	# Halt
 	exit 1;	

@@ -12,7 +12,7 @@ function hook() {
 }
 
 ## Executes hooks in specified directory
-#
+## Usage hookin $dir $name [$event]
 function hookin() {
 	
 	test ! -z $1 && DIR=$1 || error "Hook directory is not specified"
@@ -27,22 +27,11 @@ function hookin() {
 	
 	for hook in $FILES; do
 		test $CONFIG_VERBOSE && echo ">> $hook hook call"  
-			
-		___tmp=$(pwd) # Remember position
+
+		local ___tmp=$(pwd) # Remember position
 		. $hook || error "$hook failed"
 		cd $___tmp # back to prev PWD
-			
-	done;
-	
-}
 
-## Creates/modifies link
-function setlink() {
-	
-	test -L $1 && unlink $1;
-	
-	ln -sfT $2 $1 \
-	|| error "Unable to create link '$1'->'$2'" \
-	&& success "Link '$1'->'$2' successfully created"
+	done;
 	
 }
